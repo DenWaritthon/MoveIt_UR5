@@ -49,6 +49,7 @@ install(TARGETS
 ################ INSTALL LAUNCH, ETC #################
 install(DIRECTORY
   # add directories here
+  data_logger
   DESTINATION share/${PROJECT_NAME})
 
 ament_package()
