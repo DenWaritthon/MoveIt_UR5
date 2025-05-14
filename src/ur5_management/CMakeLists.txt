@@ -27,8 +27,7 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-  scripts/camera_detection.py
-  scripts/dummy_controller_service_server.py
+  scripts/set_target.py
   scripts/target_management.py
   DESTINATION lib/${PROJECT_NAME}
 )

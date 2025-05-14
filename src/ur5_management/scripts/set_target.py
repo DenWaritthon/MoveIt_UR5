@@ -2,28 +2,27 @@
 
 import rclpy
 from rclpy.node import Node
-from target_interfaces.srv import GetTarget
+from ur5_interfaces.srv import GetTarget
 
-
-class CameraDetection(Node):
+class SetTarget(Node):
     def __init__(self):
-        super().__init__('camera_detection')
+        super().__init__('set_target')
 
         # Create a service server
         self.create_service(GetTarget, '/get_target', self.get_target_callback)
 
-        self.get_logger().info(f'Camera Detection Node has been started')
+        self.get_logger().info(f'Set Target Node has been started')
 
     def get_target_callback(self, request:GetTarget.Request, response:GetTarget.Response):
         self.get_logger().info(f'service request received')
         if request.call:
-            response.target.position.x = 0.1
-            response.target.position.y = 0.2
-            response.target.position.z = 0.3
-            response.target.orientation.x = 0.4
-            response.target.orientation.y = 0.5
-            response.target.orientation.z = 0.6
-            response.target.orientation.w = 1.0
+            response.pick_target.position.x = 0.5
+            response.pick_target.position.y = 0.0
+            response.pick_target.position.z = -0.1
+
+            response.place_target.position.x = 0.0
+            response.place_target.position.y = 0.5
+            response.place_target.position.z = 0.3
             self.get_logger().info(f'Setting target success')
         else:
             self.get_logger().error(f'Setting target failed')
@@ -31,7 +30,7 @@ class CameraDetection(Node):
     
 def main(args=None):
     rclpy.init(args=args)
-    node = CameraDetection()
+    node = SetTarget()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

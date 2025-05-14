@@ -1,6 +1,9 @@
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <moveit/move_group_interface/move_group_interface.hpp>
+#include "ur5_interfaces/srv/move_it_target.hpp"
+#include "ur5_interfaces/srv/move_it_report.hpp"
+
 
 // Create a ROS logger
 auto const logger = rclcpp::get_logger("ur5_moveit");
@@ -17,15 +20,6 @@ void get_current_pose(moveit::planning_interface::MoveGroupInterface &move_group
   // Get current pose
   current_pose = move_group_interface.getCurrentPose().pose;
 
-  // Set Target pose
-  target_pose.position.x = 0.5;
-  target_pose.position.y = 0.0;
-  target_pose.position.z = 0.3;
-  target_pose.orientation.x = current_pose.orientation.x;
-  target_pose.orientation.y = current_pose.orientation.y;
-  target_pose.orientation.z = current_pose.orientation.z;
-  target_pose.orientation.w = current_pose.orientation.w;
-
   // Print the current pose
   RCLCPP_INFO(logger,
     "Current position\npose:\n\tX:%f\n\tY:%f\n\tZ:%f\norientation:\n\tx:%f\n\ty:%f\n\tz:%f\n\tw:%f", 
@@ -38,7 +32,33 @@ void get_current_pose(moveit::planning_interface::MoveGroupInterface &move_group
     current_pose.orientation.w);
 }
 
+void set_target(const std::shared_ptr<ur5_interfaces::srv::MoveItTarget::Request> request,
+  std::shared_ptr<ur5_interfaces::srv::MoveItTarget::Response> response)
+{                             
+  // Get pick target from request
+  target_pose.position.x = request->target.position.x;
+  target_pose.position.y = request->target.position.y;
+  target_pose.position.z = request->target.position.z;
+
+  // Print the pick target pose
+  RCLCPP_INFO(logger, "Target\npose:\n\tX:%f\n\tY:%f\n\tZ:%f",
+    target_pose.position.x,
+    target_pose.position.y,
+    target_pose.position.z);
+
+  RCLCPP_INFO(logger, "Set target success!");
+  service_call = true;
+  response->success = true;
+}
+
 void move_ur5(moveit::planning_interface::MoveGroupInterface &move_group_interface) {
+  // Set the target orientation
+  target_pose.orientation.x = current_pose.orientation.x;
+  target_pose.orientation.y = current_pose.orientation.y;
+  target_pose.orientation.z = current_pose.orientation.z;
+  target_pose.orientation.w = current_pose.orientation.w;
+  
+  // Set the target pose
   move_group_interface.setPoseTarget(target_pose);
 
   // Plan a Cartesian path
@@ -85,11 +105,53 @@ int main(int argc, char * argv[])
   using moveit::planning_interface::MoveGroupInterface;
   auto move_group_interface = MoveGroupInterface(node, "ur_manipulator");
 
+  // Set service server
+  auto service = node->create_service<ur5_interfaces::srv::MoveItTarget>("/target", &set_target);
+
+  // Create a service client
+  auto report = node->create_client<ur5_interfaces::srv::MoveItReport>("/ur5_report");
+
+  // Wait for the service to be available
+  while (!report->wait_for_service(std::chrono::seconds(1))) {
+    if (!rclcpp::ok()) {
+      RCLCPP_ERROR(logger, "Interrupted while waiting for the service '/ur5_report'. Exiting...");
+      return 0;
+    }
+    RCLCPP_INFO(logger, "Service '/ur5_report' not available, waiting again...");
+  }
+
   // Log that the service is ready
+  RCLCPP_INFO(logger, "Service client for '/ur5_report' is ready");
+  RCLCPP_INFO(logger, "Service '/target' is ready");
   RCLCPP_INFO(logger, "UR5 MoveIt Node has been started");
 
-  get_current_pose(move_group_interface);
-  move_ur5(move_group_interface);
+  while (rclcpp::ok()) {
+    // Wait for the service to be called
+    if (service_call) {
+      // Get current pose
+      get_current_pose(move_group_interface);
+
+      // Move the UR5 to the target pose
+      move_ur5(move_group_interface);
+
+      if (move_fail) {
+        RCLCPP_ERROR(logger, "Move step failed!");
+      } else {
+        RCLCPP_INFO(logger, "Move step success!");
+
+        // Create a request to send to the service
+        auto request = std::make_shared<ur5_interfaces::srv::MoveItReport::Request>();
+        get_current_pose(move_group_interface);
+        request->move_done = true;
+        request->current_pose = current_pose;
+        // Call the service and wait for the result
+        auto result = report->async_send_request(request);
+      }
+
+      // Reset the service call flag
+      service_call = false;
+    }
+  }
 
   // Keep the node running indefinitely by waiting for the executor thread
   spinner.join();

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(target_interfaces)
+project(ur5_interfaces)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -26,9 +26,10 @@ if(BUILD_TESTING)
 endif()
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "srv/GetTarget.srv"
-  "srv/SetTarget.srv"
   "srv/Start.srv"
+  "srv/GetTarget.srv"
+  "srv/MoveItTarget.srv"
+  "srv/MoveItReport.srv"
   DEPENDENCIES geometry_msgs # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
 )
 

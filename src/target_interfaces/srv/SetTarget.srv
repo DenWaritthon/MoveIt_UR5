@@ -1,4 +1,0 @@
-geometry_msgs/Pose pick_target
-geometry_msgs/Pose place_target
----
-bool success
