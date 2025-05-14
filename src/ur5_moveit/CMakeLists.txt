@@ -9,18 +9,16 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(target_interfaces REQUIRED) 
 
 add_executable(ur5_moveit src/ur5_moveit.cpp)
 target_include_directories(ur5_moveit PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
 target_compile_features(ur5_moveit PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 ament_target_dependencies(
   ur5_moveit
   "moveit_ros_planning_interface"
   "rclcpp"
-  "target_interfaces"
 )
 
 install(TARGETS ur5_moveit
