@@ -110,10 +110,10 @@ ros2 run ur5_moveit ur5_moveit
 ros2 run ur5_management set_target.py
 ```
 7. Call `/start` service for run UR5 Robot to pick-place with rqt or cli.
-``bash
+```bash
 ros2 service call /start ur5_interfaces/srv/Start "start: true"
 ``` 
 
 ## Demo
-[![Demo UR5 move Using MoveIt](<pictures/UR5 Home Pose.png>)](https://youtu.be/Gh8pSKVD9So)
+[![Demo UR5 move Using MoveIt](pictures/UR5 Home Pose.png)](https://youtu.be/Gh8pSKVD9So)
 **Click to watch VDO**
