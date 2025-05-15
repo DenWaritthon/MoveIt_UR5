@@ -97,6 +97,22 @@ ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur5 launch_rviz:=true 
 ```bash
 ros2 launch ur_moveit_config ur_moveit.launch.py ur_type:=ur5 launch_rviz:=false
 ```
+4. Run Target management node for get pick and place target and manage target to move UR5 Robot.
+```bash
+ros2 run ur5_management target_management.py
+```
+5. Run MoveIt controller node for control UR5 Robot.
+```bash
+ros2 run ur5_moveit ur5_moveit
+```
+6. Run Node for set dummy pick and place target to Target management node.
+```bash
+ros2 run ur5_management set_target.py
+```
+7. Call `/start` service for run UR5 Robot to pick-place with rqt or cli.
+``bash
+ros2 service call /start ur5_interfaces/srv/Start "start: true"
+``` 
 
 ## Demo
 
