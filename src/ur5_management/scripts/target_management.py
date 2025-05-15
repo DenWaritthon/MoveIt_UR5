@@ -48,7 +48,7 @@ class TargetManagement(Node):
         self.start = False
         self.move_done = False
         self.curent_pose = [0.0, 0.0, 0.0]
-        self.move_count_max = 2
+        self.move_count_max = 18
         self.move_count = 0
         self.move_step = 0
         
@@ -67,6 +67,7 @@ class TargetManagement(Node):
             self.start = True
             self.move_done = True
             self.get_logger().info(f'Start: {self.start}')
+            self.get_logger().info(f'Start time : {self.get_clock().now().to_msg()}')
             self.call_get_target()
             self.set_target_list()
 
@@ -79,11 +80,13 @@ class TargetManagement(Node):
             self.curent_pose[0] = request.current_pose.position.x
             self.curent_pose[1] = request.current_pose.position.y
             self.curent_pose[2] = request.current_pose.position.z
-            self.get_logger().info(f'Move done: {self.move_done}')
+            # self.get_logger().info(f'Move done: {self.move_done}')
 
-            if self.move_step == 2:
+            if self.move_step == 3:
+                self.get_logger().info(f'Pick target reached')
                 self.save_yaml(pick=True)
-            elif self.move_step == 5:
+            elif self.move_step == 7:
+                self.get_logger().info(f'Place target reached')
                 self.save_yaml(place=True)
 
             if self.start and len(self.target_list) == 0 and self.move_count >= self.move_count_max:
@@ -91,6 +94,7 @@ class TargetManagement(Node):
                 self.move_step = 0
                 self.get_logger().info(f'All targets have been reached')
                 self.get_logger().info(f'Go to home position')
+                self.get_logger().info(f'Stop time : {self.get_clock().now().to_msg()}')
                 self.call_moveit_target(self.home_target)
                 
                 
@@ -130,7 +134,11 @@ class TargetManagement(Node):
 
         result = self.moveit_target_client.call(request)
 
-        self.get_logger().info(f'Set target done: {result.success}')
+        if result.success:
+            # self.get_logger().info(f'Set target done: {result.success}')
+            pass
+        else:
+            self.get_logger().error(f'Set target failed')
 
     def call_get_target(self):
         request = GetTarget.Request()
@@ -150,16 +158,19 @@ class TargetManagement(Node):
         self.get_logger().info(f'Move count: {self.move_count}')
         self.get_logger().info(f'Pick target: {self.pick_target}')
         self.get_logger().info(f'Place target: {self.place_target}')
-        self.get_logger().info(f'Get target success')
+        # self.get_logger().info(f'Get target success')
 
     def set_target_list(self):
         upper_pick_target_1 = [self.pick_target[0], self.pick_target[1], self.pick_target[2] + 0.2]
         upper_pick_target_2 = [self.pick_target[0], self.pick_target[1], self.place_target[2] + 0.2]
+        upper_pick_target_3 = [self.pick_target[0], self.place_target[1], self.place_target[2] + 0.2]
         upper_place_target = [self.place_target[0], self.place_target[1], self.place_target[2] + 0.2]
 
+        self.target_list.append(self.home_target)
         self.target_list.append(upper_pick_target_1)
         self.target_list.append(self.pick_target)
         self.target_list.append(upper_pick_target_2)
+        self.target_list.append(upper_pick_target_3)
         self.target_list.append(upper_place_target)
         self.target_list.append(self.place_target)
         self.target_list.append(upper_place_target)
@@ -172,7 +183,7 @@ class TargetManagement(Node):
                 self.move_done = False
                 self.move_step += 1
                 target = self.target_list.pop(0)
-                self.get_logger().info(f'Current target: {target}')
+                # self.get_logger().info(f'Current target: {target}')
                 self.call_moveit_target(target)
 
         elif self.start and len(self.target_list) == 0 and self.move_count < self.move_count_max:
