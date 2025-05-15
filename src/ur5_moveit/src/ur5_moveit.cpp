@@ -78,13 +78,14 @@ void move_ur5(moveit::planning_interface::MoveGroupInterface &move_group_interfa
   if(success) {
     RCLCPP_INFO(logger, "Planing success!");
     move_group_interface.execute(plan);
+    RCLCPP_INFO(logger, "Move Done!");
+    move_fail = false;
   } else {
     RCLCPP_ERROR(logger, "Planing failed!");
     move_fail = true;
     return;
   }
       
-  RCLCPP_INFO(logger, "Move Done!");
 }
 
 int main(int argc, char * argv[])

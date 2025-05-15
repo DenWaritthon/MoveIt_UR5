@@ -55,11 +55,11 @@ class TargetManagement(Node):
         self.move_pick = 0.0
         self.move_place = 0.0
 
+        self.home_target = [0.45, -0.1, 0.5]
         self.pick_target = [0.0, 0.0, 0.0]
         self.place_target = [0.0, 0.0, 0.0]
 
         self.target_list = []
-        
 
     def start_callback(self, request:Start.Request, response:Start.Response):
         # self.get_logger().info(f'Start call')
@@ -69,6 +69,7 @@ class TargetManagement(Node):
             self.get_logger().info(f'Start: {self.start}')
             self.call_get_target()
             self.set_target_list()
+
         return response
     
     def report_callback(self, request:MoveItReport.Request, response:MoveItReport.Response):
@@ -79,10 +80,19 @@ class TargetManagement(Node):
             self.curent_pose[1] = request.current_pose.position.y
             self.curent_pose[2] = request.current_pose.position.z
             self.get_logger().info(f'Move done: {self.move_done}')
+
             if self.move_step == 2:
                 self.save_yaml(pick=True)
             elif self.move_step == 5:
                 self.save_yaml(place=True)
+
+            if self.start and len(self.target_list) == 0 and self.move_count >= self.move_count_max:
+                self.start = False
+                self.move_step = 0
+                self.get_logger().info(f'All targets have been reached')
+                self.get_logger().info(f'Go to home position')
+                self.call_moveit_target(self.home_target)
+                
                 
         return response
     
@@ -143,12 +153,13 @@ class TargetManagement(Node):
         self.get_logger().info(f'Get target success')
 
     def set_target_list(self):
-        upper_pick_target = [self.pick_target[0], self.pick_target[1], self.pick_target[2] + 0.2]
+        upper_pick_target_1 = [self.pick_target[0], self.pick_target[1], self.pick_target[2] + 0.2]
+        upper_pick_target_2 = [self.pick_target[0], self.pick_target[1], self.place_target[2] + 0.2]
         upper_place_target = [self.place_target[0], self.place_target[1], self.place_target[2] + 0.2]
 
-        self.target_list.append(upper_pick_target)
+        self.target_list.append(upper_pick_target_1)
         self.target_list.append(self.pick_target)
-        self.target_list.append(upper_pick_target)
+        self.target_list.append(upper_pick_target_2)
         self.target_list.append(upper_place_target)
         self.target_list.append(self.place_target)
         self.target_list.append(upper_place_target)
@@ -167,13 +178,7 @@ class TargetManagement(Node):
         elif self.start and len(self.target_list) == 0 and self.move_count < self.move_count_max:
             self.move_step = 0
             self.call_get_target()
-            self.set_target_list()
-        elif self.start and len(self.target_list) == 0 and self.move_count >= self.move_count_max:
-            self.start = False
-            self.move_step = 0
-            self.get_logger().info(f'All targets have been reached')
-
-        
+            self.set_target_list()         
 
 def main(args=None):
     rclpy.init(args=args)

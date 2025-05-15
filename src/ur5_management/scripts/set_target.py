@@ -29,7 +29,7 @@ class SetTarget(Node):
                 response.place_target.position.x = 0.0
                 response.place_target.position.y = 0.5
                 response.place_target.position.z = 0.3
-            else:
+            elif self.call_count == 2:
                 response.pick_target.position.x = 0.5
                 response.pick_target.position.y = 0.0
                 response.pick_target.position.z = 0.1
@@ -37,6 +37,7 @@ class SetTarget(Node):
                 response.place_target.position.x = 0.0
                 response.place_target.position.y = -0.5
                 response.place_target.position.z = 0.3
+                self.call_count = 0
 
             self.get_logger().info(f'Setting target success')
         else:
